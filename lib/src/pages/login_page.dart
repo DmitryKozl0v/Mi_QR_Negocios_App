@@ -1,4 +1,5 @@
 import 'package:app_qr_negocio/src/bloc/login_bloc.dart';
+import 'package:app_qr_negocio/src/providers/lists_provider.dart';
 import 'package:flutter/material.dart';
 
 import 'package:app_qr_negocio/src/shared_preferences/shared_preferences.dart';
@@ -22,9 +23,10 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
 
-  final loginData     = LoginData();
   final clientProvider = ClientProvider();
   final loginProvider = LoginProvider();
+  final listsProvider = ListsProvider();
+  final loginData     = LoginData();
   final loginKey      = GlobalKey<FormState>();
   bool _isLoading = false;
 
@@ -284,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if(user['verified']){
 
-        final isViewer = await clientProvider.isOnViewerList(loginInfo['token'], user['user'].email);
+        final isViewer = await clientProvider.isOnViewerList(loginInfo['token'], user['user'].email, loginInfo['uid']);
 
         if(isViewer){
 
@@ -293,6 +295,7 @@ class _LoginPageState extends State<LoginPage> {
           });
           
           loginProvider.firebaseAuthGetIdTokenExpirationTime();
+          listsProvider.getViewerData(loginInfo['token'], loginInfo['uid']);
 
           Navigator.pushReplacementNamed(context, 'home', arguments: loginInfo['token']);
         }else{

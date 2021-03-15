@@ -94,7 +94,7 @@ class _ScannedDataPageState extends State<ScannedDataPage> {
                   ],
                 ),
 
-                child: _form(requestedData, size)
+                child: _form(requestedData, size, idToken)
               ),
             ),
           ),
@@ -103,7 +103,7 @@ class _ScannedDataPageState extends State<ScannedDataPage> {
     );
   }
 
-  _form(Future<Map <String, dynamic>> requestedData, Size size){
+  _form(Future<Map <String, dynamic>> requestedData, Size size, String idToken){
 
     return Form(
       child: FutureBuilder(
@@ -131,7 +131,7 @@ class _ScannedDataPageState extends State<ScannedDataPage> {
                     SizedBox(width: 15.0),
                     _cancelButton(context, size),
                     Expanded(child: Container(),),
-                    _submitButton(context, size, snapshot.data['client'], snapshot.data['id']),
+                    _submitButton(context, size, snapshot.data['client'], snapshot.data['id'], idToken),
                     SizedBox(width: 15.0)
                     ],
                   )
@@ -167,7 +167,7 @@ class _ScannedDataPageState extends State<ScannedDataPage> {
     );
   }
 
-  _submitButton(BuildContext context, Size size, ClientModel clientModel, String id){
+  _submitButton(BuildContext context, Size size, ClientModel clientModel, String id, String idToken){
     return RaisedButton(
       child: Container(
         height: size.height * 0.06,
@@ -179,11 +179,11 @@ class _ScannedDataPageState extends State<ScannedDataPage> {
       ),
       textColor: Colors.white,
       color: Colors.purple,
-      onPressed: () => _submit(context, clientModel, id)
+      onPressed: () => _submit(context, clientModel, id, idToken)
     );
   }
 
-  _submit(BuildContext context, ClientModel clientModel, String idToken)async{
+  _submit(BuildContext context, ClientModel clientModel, String id, String idToken) async{
     
     setState(() {
       _isLoading = true;
@@ -193,17 +193,17 @@ class _ScannedDataPageState extends State<ScannedDataPage> {
 
       String refreshResult = await loginProvider.firebaseAuthRefreshSession();
 
-      if(refreshResult == 'not-refreshed'){
-        listsProvider.addUser(clientModel, idToken);
-      }else{
-        listsProvider.addUser(clientModel, refreshResult);
+      if(refreshResult != 'not-refreshed'){
+        idToken = refreshResult;
       }
+
+      listsProvider.addUser(clientModel, id, idToken);
 
       setState(() {
         _isLoading = false;
       });
 
-      Navigator.pushReplacementNamed(context, 'home');
+      Navigator.pushReplacementNamed(context, 'home', arguments: idToken);
     }
   }
 }

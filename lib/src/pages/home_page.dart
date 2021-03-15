@@ -1,18 +1,30 @@
+import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import 'package:app_qr_negocio/src/models/client_model.dart';
 import 'package:app_qr_negocio/src/providers/lists_provider.dart';
+import 'package:app_qr_negocio/src/providers/login_provider.dart';
 import 'package:app_qr_negocio/src/shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
 
 import 'package:app_qr_negocio/src/utils/utils.dart' as utils;
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
 
   final savedData = SavedData();
   final listProvider = ListsProvider();
+  final loginProvider = LoginProvider();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     String idToken = ModalRoute.of(context).settings.arguments;
+    Permission.storage.request();
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -24,6 +36,15 @@ class HomePage extends StatelessWidget {
         children: <Widget>[
           _crearFondo(),
           _menuFondo(context, idToken),
+          _isLoading ? Stack(children: <Widget>[
+            Container(height: double.infinity,width: double.infinity, color: Colors.white24,),
+            Center(child: CircularProgressIndicator(
+              backgroundColor: Color.fromRGBO(39, 39, 39, 1.0),
+              strokeWidth: 5.0,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple[400])
+              )
+            )
+          ]) : Container()
         ],
       )
     );
@@ -52,7 +73,7 @@ class HomePage extends StatelessWidget {
               child: Container(
 
                 width: size.width * 0.85,
-                height: size.height * 0.7,
+                height: size.height * 0.8,
                 margin: EdgeInsets.symmetric(vertical: 30.0),
                 padding: EdgeInsets.symmetric(vertical: 50.0),
                 decoration: BoxDecoration(
@@ -73,7 +94,7 @@ class HomePage extends StatelessWidget {
                     Expanded(child: Container()),
                     _scanButton(context, size, idToken),
                     SizedBox(height: 45.0),
-                    _requestButton(context, size),
+                    _requestButton(context, size, idToken),
                     Expanded(child: Container())
                   ]
                 )
@@ -88,34 +109,34 @@ class HomePage extends StatelessWidget {
   _scanButton(BuildContext context, Size size, String idToken){
     return RaisedButton(
       child: Container(
-        height: size.height * 0.08,
+        height: size.height * 0.3,
         width: size.width * 0.65,
         child: Center(child: Text('Cargar cliente')),
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(5.0)
       ),
-      elevation: 0.0,
+      elevation: 10.0,
       color: Colors.deepPurple,
       textColor: Colors.white,
       onPressed: () => _scanHandle(context, idToken)
     );
   }
 
-  _requestButton(BuildContext context, Size size){
+  _requestButton(BuildContext context, Size size, String idToken){
     return RaisedButton(
       child: Container(
-        height: size.height * 0.08,
+        height: size.height * 0.3,
         width: size.width * 0.65,
         child: Center(child: Text('Pedir lista')),
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(5.0)
       ),
-      elevation: 0.0,
+      elevation: 10.0,
       color: Colors.deepPurple,
       textColor: Colors.white,
-      onPressed:  () => _requestList(context)
+      onPressed:  () => _requestList(context, idToken)
     );
   }
 
@@ -124,32 +145,82 @@ class HomePage extends StatelessWidget {
     await utils.scan();
 
     if (savedData.scanResult != ''){
-      Navigator.pushReplacementNamed(context, 'scanned', arguments: idToken);
+
+      String refreshResult = await loginProvider.firebaseAuthRefreshSession();
+
+      if(refreshResult == 'not-refreshed'){
+        Navigator.pushReplacementNamed(context, 'scanned', arguments: idToken);
+      }else{
+        Navigator.pushReplacementNamed(context, 'scanned', arguments: refreshResult);
+      }
+
     }else{
       utils.showScanError(context);
     }
   }
 
-  _requestList(BuildContext context) async{
+  _requestList(BuildContext context, String idToken) async{
 
-    DateTime date = await _selectDate(context);
-    String formattedDate = utils.dateFormatter(date);
+    setState(() {
+      _isLoading = true;
+    });
 
-    List<ClientModel> clientList = await listProvider.requestList(formattedDate);
+    Map date = await _selectDate(context);
+    String formattedDate = utils.dateFormatter(date['date']);
 
-    utils.createPDF(clientList, formattedDate);
+    if(!date['ok']){
+
+        String refreshResult = await loginProvider.firebaseAuthRefreshSession();
+
+      if(refreshResult != 'not-refreshed'){
+        idToken = refreshResult;
+      }
+
+      List<ClientModel> clientList = await listProvider.requestList(formattedDate, idToken);
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      utils.createPDF(clientList, formattedDate);
+    }else{
+      
+      setState(() {
+          _isLoading = false;
+      });
+    }
+
+    
   }
 
-  Future<DateTime> _selectDate(BuildContext context) async{
+  // TODO: FIX ME PLS
 
-    DateTime picked = await showDatePicker(
+  Future<Map <String, dynamic>> _selectDate(BuildContext context) async{
+
+    DateTime selectedDate = new DateTime.now();
+    bool didSelect = false;
+
+    dynamic picked = await showDatePicker(
       context: context, 
-      initialDate: new DateTime.now(), 
+      initialDate: selectedDate,
       firstDate: new DateTime(2020), 
       lastDate: new DateTime(2025),
       locale: Locale('es', 'AR'),
     );
 
-    return picked;
+
+
+    if (picked != null && picked != selectedDate)
+      setState(() {
+        selectedDate = picked;
+        didSelect = true;
+    });
+
+    return {'ok': didSelect, 'date': selectedDate};
+    // if(picked != null){
+    //   return {'ok': true, 'date': picked};
+    // }else{
+    //   return {'ok': false};
+    // }
   }
 }

@@ -46,4 +46,24 @@ class SavedData{
   set expDate(String value){
     _prefs.setString('expDate', value);
   }
+
+  // GET & SET for businessName
+
+  get businessName{
+    return _prefs.getString('businessName') ?? '';
+  }
+
+  set businessName(String value){
+    _prefs.setString('businessName', value);
+  }
+
+  // GET & SET para hasAcceptedDisclaimer
+
+  get hasAcceptedDisclaimer{
+    return _prefs.getBool('hasAcceptedDisclaimer') ?? false;
+  }
+
+  set hasAcceptedDisclaimer(bool value){
+    _prefs.setBool('hasAcceptedDisclaimer', value);
+  }
 }

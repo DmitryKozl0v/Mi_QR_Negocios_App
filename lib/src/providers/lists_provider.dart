@@ -1,56 +1,74 @@
 
-import 'package:firebase_database/firebase_database.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import 'package:app_qr_negocio/src/models/client_model.dart';
 import 'package:app_qr_negocio/src/utils/utils.dart' as utils;
+import 'package:app_qr_negocio/src/shared_preferences/shared_preferences.dart';
 
 class ListsProvider{
 
-  final _databaseRef = FirebaseDatabase.instance.reference();
+  final String _url = 'https://qr-app-cliente.firebaseio.com';
+  final _savedData = SavedData();
   static final DateTime _today = DateTime.now();
   final String _formattedDate = utils.dateFormatter(_today);
 
-  List<ClientModel> _list = [];
   
-  addUser(ClientModel client, String id){
 
-    _databaseRef.child('Negocio/Lists/$_formattedDate/$id').update(client.toJson());
+  getViewerData(String idToken, String uid) async{
+
+    final url = '$_url/viewers/$uid.json?auth=$idToken';
+
+    final resp = await http.get(url);
+
+    final Map<String, dynamic> decodedResp = json.decode(resp.body);
+
+    _savedData.businessName = decodedResp['negocio'];
+  }
+  
+  Future<bool> addUser(ClientModel client, String id, String idToken) async{
+
+    final url = '$_url/negocios/${_savedData.businessName}/lists/$_formattedDate/$id.json?auth=$idToken';
+
+    final resp = await http.put(
+      url, 
+      body: clientModelToJson(client)  
+    );
+
+    final Map<String, dynamic> decodedData = json.decode(resp.body);
+
+    if(decodedData.containsKey('apellido')){
+      return true;
+    }else{
+      return false;
+    }
   }
 
-  Future <List<ClientModel>> requestList(String date) async{    
+  Future <List<ClientModel>> requestList(String date, String idToken) async{    
 
-    // TODO: not a great implementation, pls fix me
+    List<ClientModel> list = [];
 
-    
+    final url = '$_url/negocios/${_savedData.businessName}/lists/$date.json?auth=$idToken';
 
-    await _databaseRef.child('Negocio/Lists/$date').once().then((DataSnapshot snapshot) {
+    final resp = await http.get(url);
+
+    final Map<String, dynamic> decodedData = json.decode(resp.body);
+
+    print(decodedData);
+
+    decodedData.forEach((key, value) {
       
-      dynamic resp = snapshot.value;
+      ClientModel tempClient = new ClientModel();
 
-      resp.forEach((key, value) {
-        
-        ClientModel tempClient = new ClientModel();
+      tempClient.apellido   = value['apellido'];
+      tempClient.direccion  = value['direccion'];
+      tempClient.telefono   = num.parse(value['telefono'].toString());
+      tempClient.nombre     = value['nombre'];
+      tempClient.dni        = value['dni'];
 
-        tempClient.apellido   = value['apellido'];
-        tempClient.direccion  = value['direccion'];
-        tempClient.telefono   = num.parse(value['telefono'].toString());
-        tempClient.nombre     = value['nombre'];
-        tempClient.dni        = value['dni'];
-
-        _list.add(tempClient);
-      });
-
-      // _list.forEach((element) {
-      //   print('========================');
-      //   print(element.apellido);
-      //   print(element.direccion);
-      //   print(element.telefono);
-      //   print(element.nombre);
-      //   print(element.dni);
-      // });
-
+      list.add(tempClient);
     });
 
-    return _list;
+    return list;
   }
 }

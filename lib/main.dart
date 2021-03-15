@@ -10,6 +10,7 @@ import 'package:app_qr_negocio/src/shared_preferences/shared_preferences.dart';
 import 'package:app_qr_negocio/src/pages/home_page.dart';
 import 'package:app_qr_negocio/src/pages/login_page.dart';
 import 'package:app_qr_negocio/src/pages/register_page.dart';
+import 'package:app_qr_negocio/src/pages/disclaimer_page.dart';
 import 'package:app_qr_negocio/src/pages/scanned_data_page.dart';
 
 
@@ -39,6 +40,7 @@ void main() async{
 }
  
 class MyApp extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return Provider(
@@ -57,13 +59,15 @@ class MyApp extends StatelessWidget {
         title: 'MiQR Negocios',
         initialRoute: 'login',
         routes: {
-          'home'        :(BuildContext context)       =>HomePage(),
-          'scanned'     :(BuildContext context)       =>ScannedDataPage(),
-          'login'       :(BuildContext context)       =>LoginPage(),
-          'register'    :(BuildContext context)       =>RegisterPage(),
+          'home'          :(BuildContext context)       =>HomePage(),
+          'scanned'       :(BuildContext context)       =>ScannedDataPage(),
+          'login'         :(BuildContext context)       =>LoginPage(),
+          'register'      :(BuildContext context)       =>RegisterPage(),
+          'disclaimer'    :(BuildContext context)       =>DisclaimerPage(),
           
         },
         theme: ThemeData(
+          
           primaryColor: Colors.purple,
           accentColor:  Colors.purpleAccent
         ),

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:app_qr_negocio/src/providers/login_provider.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:app_qr_negocio/src/models/client_model.dart';
@@ -8,7 +7,6 @@ import 'package:app_qr_negocio/src/models/client_model.dart';
 class ClientProvider{
 
   final String _url = 'https://qr-app-cliente.firebaseio.com';
-  final loginProvider = LoginProvider();
 
   Future<Map<String,dynamic >> requestClient (ClientModel client, String scannedID, String idToken) async{
 
@@ -21,11 +19,10 @@ class ClientProvider{
     return {'client': client, 'id': scannedID};
   }
 
-  Future<bool> isOnViewerList(String idToken, String email) async{
+  Future<bool> isOnViewerList(String idToken, String email, String uid) async{
 
 
-
-    final url = '$_url/viewers.json?auth=$idToken';
+    final url = '$_url/viewers/$uid.json?auth=$idToken';
 
     final resp = await http.get(url);
 
