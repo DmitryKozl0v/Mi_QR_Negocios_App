@@ -2,6 +2,8 @@ Mi QR is an app designed to save a person's personal data (under said person per
 
 This was developed to answer a problematic cause by COVID-19, where people would go to any restaurant, retail store, supermarket, etc, and their data would be written down by hand on paper for COVID-19 tracing purposes, making the process tedius, slow and unhealthy.
 
+Mi QR Negocios is used to scan client's QR codes, and stores the information on a list for that particular date, that can later be retrieved in pdf format.
+
 Since this project uses some libraries that are under MIT's Open Source Licence, so is this project:
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
